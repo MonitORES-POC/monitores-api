@@ -8,7 +8,8 @@ import {
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
 import { Socket, Server } from 'socket.io';
-import { MeasureEvent } from './pgus/events/measure.event';
+import { PguStateUpdateDto } from './pgus/dto/pgu-state-update.dto';
+import { StateBufferService } from './pgus/state-buffer/state-buffer.service';
 
 @WebSocketGateway({
   cors: {
@@ -18,17 +19,26 @@ import { MeasureEvent } from './pgus/events/measure.event';
 export class MeasureGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
+  constructor(private stateBufferService: StateBufferService) {}
   @WebSocketServer() server: Server;
   private logger: Logger = new Logger('MeasureGateway');
 
-  @SubscribeMessage('msgToServer')
+  @SubscribeMessage('get_buffer')
   handleMessage(client: Socket, payload: string): void {
-    this.server.emit('msgToClient', payload);
+    const iterator = client.rooms.values();
+    const id: number = iterator.next().value;
+    this.server
+      .to(client.id)
+      .emit(
+        'send_buffer',
+        JSON.stringify(this.stateBufferService.getBuffer(id)),
+      );
   }
 
-  sendMeasuresToClients(measure: MeasureEvent) {
+  sendMeasuresToClients(pguUpdate: PguStateUpdateDto) {
     try {
-      this.server.emit('measure_event', measure);
+      this.server.to(pguUpdate.id.toString());
+      this.server.emit('update_state_event', pguUpdate);
     } catch (error) {
       this.logger.error(error);
     }
@@ -43,6 +53,8 @@ export class MeasureGateway
   }
 
   handleConnection(client: Socket, ...args: any[]) {
-    this.logger.log(`Client connected: ${client.id}`);
+    const { id } = client.handshake.query;
+    client.join(id);
+    this.logger.log(`Client connected: ${client.id} to PGU ${id}`);
   }
 }

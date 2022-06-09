@@ -4,6 +4,12 @@ import { PgusService } from './pgus.service';
 import { PgusController } from './pgus.controller';
 import { MeasureGateway } from 'src/measure.gateway';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { UsersService } from 'src/users/users.service';
+import { ConfigService } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
+import { AuthModule } from 'src/auth/auth.module';
+import { UsersModule } from 'src/users/users.module';
+import { StateBufferService } from './state-buffer/state-buffer.service';
 
 @Module({
   imports: [
@@ -23,8 +29,11 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
       },
     ]),
     HttpModule,
+    ScheduleModule.forRoot(),
+    AuthModule,
+    UsersModule,
   ],
   controllers: [PgusController],
-  providers: [PgusService, MeasureGateway],
+  providers: [PgusService, MeasureGateway, ConfigService, StateBufferService],
 })
 export class PgusModule {}

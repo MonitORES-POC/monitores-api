@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
-import { JwtService } from '@nestjs/jwt';
 import { HttpService } from '@nestjs/axios';
 import { AppConstants } from 'src/app.constants';
 import { User } from 'src/users/entities/user.entity';
 import { lastValueFrom } from 'rxjs';
+import { ConfigService } from '@nestjs/config';
+import { Cron } from '@nestjs/schedule';
 
 export interface Token {
   token: string;
@@ -12,16 +13,18 @@ export interface Token {
 
 @Injectable()
 export class AuthService {
+  private apiToken: string;
   constructor(
     private readonly usersService: UsersService,
-    private readonly jwtService: JwtService,
     private httpService: HttpService,
+    private configService: ConfigService,
   ) {}
 
   async validateUser(username: string, pass: string): Promise<any> {
+    console.log('Validating user ' + username);
     const headers = {
       'content-type': 'text/plain',
-      Autorization: 'Bearer',
+      Authorization: 'Bearer',
       'Access-Control-Allow-Origin': 'http://localhost:4200',
     };
 
@@ -39,16 +42,55 @@ export class AuthService {
       user = new User();
       user.id = username;
       user.token = res.data.token;
+      if (username === 'admin') {
+        this.apiToken = res.data.token;
+        console.log(res.data.token);
+      }
+      console.log('User validated');
     } else {
       user = null;
     }
     return user;
   }
 
-  async login(user: any) {
-    const payload = { username: user.username, sub: user.userId };
-    return {
-      access_token: this.jwtService.sign(payload),
+  async enrollApi() {
+    const fabloUser = this.configService.get<string>('FABLO_USER');
+    const fabloPass = this.configService.get<string>('FABLO_PASSWORD');
+    const user = await this.validateUser(fabloUser, fabloPass);
+    if (user) {
+      this.apiToken = user.token;
+    } else {
+      console.log('Error enrolling');
+    }
+  }
+
+  getApiToken(): string {
+    return this.apiToken;
+  }
+
+  @Cron('0 */9 * * * *')
+  async reEnrollApi() {
+    await this.enrollApi();
+    console.log('User reenrolled');
+    /* const headers = {
+      'content-type': 'text/plain',
+      Authorization: 'Bearer ' + this.apiToken,
     };
+    this.httpService
+      .post<Token>(
+        `${AppConstants.FABLO_API}/user/reenroll`,
+        {},
+        {
+          headers: headers,
+        },
+      )
+      .subscribe((res) => {
+        if (res.data.token) {
+          this.apiToken = res.data.token;
+          console.log('User reenrolled');
+        } else {
+          console.log('Error reenrolling');
+        }
+      }); */
   }
 }

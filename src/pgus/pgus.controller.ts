@@ -1,41 +1,63 @@
 // eslint-disable-next-line prettier/prettier
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { PgusService } from './pgus.service';
 import { CreatePgusDto } from './dto/create-pgus.dto';
 import { UpdatePgusDto } from './dto/update-pgus.dto';
-import { EventPattern } from '@nestjs/microservices';
+import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
+import { TokenAuthGuard } from 'src/auth/guards/token.guard';
+import { GetConstraintRequest } from './dto/get-constraint.request';
 
 @Controller('pgus')
 export class PgusController {
   constructor(private readonly pgusService: PgusService) {}
 
+  @UseGuards(TokenAuthGuard)
   @Post()
-  create(@Body() createPgusDto: CreatePgusDto) {
-    return this.pgusService.create(createPgusDto);
+  create(@Body() createPgusDto: CreatePgusDto, @Request() req) {
+    return this.pgusService.create(createPgusDto, req.headers.authorization);
   }
 
+  @UseGuards(TokenAuthGuard)
   @Get()
-  findAll() {
-    return this.pgusService.findAll();
+  async findAll(@Request() req) {
+    return await this.pgusService.findAll(req.headers.authorization);
   }
 
+  @UseGuards(TokenAuthGuard)
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.pgusService.findOne(+id);
+  findOne(@Param('id') id: string, @Request() req) {
+    return this.pgusService.findOne(+id, req.headers.authorization);
   }
 
+  @UseGuards(TokenAuthGuard)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updatePgusDto: UpdatePgusDto) {
     return this.pgusService.update(+id, updatePgusDto);
   }
 
+  @UseGuards(TokenAuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.pgusService.remove(+id);
   }
 
-  @EventPattern('pgu-1')
+  @EventPattern('pgu-measures')
   handlePowerMeasure(data: any) {
     this.pgusService.handlePowerMeasure(data.value);
+  }
+
+  @MessagePattern('get_constraint')
+  async getConstraint(data: any) {
+    return await this.pgusService.getConstraint(data.value.id);
   }
 }
