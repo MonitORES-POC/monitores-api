@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { HttpService } from '@nestjs/axios';
 import { AppConstants } from 'src/app.constants';
 import { User } from 'src/users/entities/user.entity';
-import { lastValueFrom } from 'rxjs';
+import { catchError, lastValueFrom, Observable, of } from 'rxjs';
 import { ConfigService } from '@nestjs/config';
 import { Cron } from '@nestjs/schedule';
 
@@ -13,6 +13,7 @@ export interface Token {
 
 @Injectable()
 export class AuthService {
+  private logger: Logger = new Logger('auth');
   private apiToken: string;
   constructor(
     private readonly usersService: UsersService,
@@ -29,16 +30,14 @@ export class AuthService {
     };
 
     const body = JSON.stringify({ id: username, secret: pass });
-    const res$ = this.httpService.post<Token>(
-      `${AppConstants.FABLO_API}/user/enroll`,
-      body,
-      {
+    const res$ = this.httpService
+      .post<Token>(`${AppConstants.FABLO_API}/user/enroll`, body, {
         headers: headers,
-      },
-    );
+      })
+      .pipe(catchError(this.handleError<any>('User enrolling')));
     const res = await lastValueFrom(res$);
     let user: User;
-    if (res.data.token) {
+    if (res?.data.token) {
       user = new User();
       user.id = username;
       user.token = res.data.token;
@@ -72,25 +71,24 @@ export class AuthService {
   async reEnrollApi() {
     await this.enrollApi();
     console.log('User reenrolled');
-    /* const headers = {
-      'content-type': 'text/plain',
-      Authorization: 'Bearer ' + this.apiToken,
+  }
+
+  /**
+   * Handle Http operation that failed.
+   * Let the app continue.
+   * @param operation - name of the operation that failed
+   * @param result - optional value to return as the observable result
+   */
+  private handleError<T>(operation = 'operation', result?: T) {
+    return (error: any): Observable<T> => {
+      // TODO: send the error to remote logging infrastructure
+      this.logger.error(JSON.stringify(error)); // log to console instead
+
+      // TODO: better job of transforming error for user consumption
+      this.logger.log(`${operation} failed: ${error.message}`);
+
+      // Let the app keep running by returning an empty result.
+      return of(result as T);
     };
-    this.httpService
-      .post<Token>(
-        `${AppConstants.FABLO_API}/user/reenroll`,
-        {},
-        {
-          headers: headers,
-        },
-      )
-      .subscribe((res) => {
-        if (res.data.token) {
-          this.apiToken = res.data.token;
-          console.log('User reenrolled');
-        } else {
-          console.log('Error reenrolling');
-        }
-      }); */
   }
 }

@@ -1,8 +1,21 @@
 export class AppConstants {
   static readonly MINUTES = 1;
-  static readonly STATE_BUFFER_SIZE = 100;
+  static readonly STATE_BUFFER_SIZE = 10;
 
   static readonly FABLO_API = 'http://localhost:8801';
   static readonly smartContractInvokePoint = '/invoke/my-channel1/chaincode1';
   static readonly smartContractQueryPoint = '/query/my-channel1/chaincode1';
+
+  static readonly PGUMonitorContractMethod = {
+    createPGU: 'MonitorPGUContract:CreatePGU',
+    getPGU: 'MonitorPGUContract:GetPGU',
+    deletePGU: 'MonitorPGUContract:DeletePGU',
+    getAllPGUs: 'MonitorPGUContract:GetAllPGUs',
+    submitMeasurePGU: 'MonitorPGUContract:SubmitMeasure',
+    getMeasurePGU: 'MonitorPGUContract:GetMeasure',
+    submitConstraint: 'MonitorPGUContract:SubmitConstraint',
+    getConstraint: 'MonitorPGUContract:GetConstraint',
+    declareAlert: 'MonitorPGUContract:DeclareAlert',
+    declareUrgency: 'MonitorPGUContract:DeclareUrgency',
+  };
 }

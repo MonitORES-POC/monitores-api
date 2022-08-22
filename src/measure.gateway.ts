@@ -25,8 +25,7 @@ export class MeasureGateway
 
   @SubscribeMessage('get_buffer')
   handleMessage(client: Socket, payload: string): void {
-    const iterator = client.rooms.values();
-    const id: number = iterator.next().value;
+    const id: number = payload['id'];
     this.server
       .to(client.id)
       .emit(

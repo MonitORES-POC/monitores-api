@@ -11,7 +11,6 @@ export class StateBufferService {
 
   initBuffer(id: number) {
     this.stateBufferArray[id] = new Array<PguStateUpdateDto>();
-    const currentBuffer = this.stateBufferArray[id];
     const initialConstraint: Constraint = {
       applicationTime: null,
       powerLimit: -1,
@@ -27,7 +26,7 @@ export class StateBufferService {
         (AppConstants.STATE_BUFFER_SIZE + 1) * AppConstants.MINUTES,
     );
     for (let i = 0; i < AppConstants.STATE_BUFFER_SIZE; i++) {
-      currentBuffer.push(
+      this.stateBufferArray[id].push(
         new PguStateUpdateDto(
           id,
           0,

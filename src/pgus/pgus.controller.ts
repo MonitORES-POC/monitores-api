@@ -16,6 +16,7 @@ import { UpdatePgusDto } from './dto/update-pgus.dto';
 import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import { TokenAuthGuard } from 'src/auth/guards/token.guard';
 import { GetConstraintRequest } from './dto/get-constraint.request';
+import { Constraint } from './entities/constraint';
 
 @Controller('pgus')
 export class PgusController {
@@ -25,6 +26,32 @@ export class PgusController {
   @Post()
   create(@Body() createPgusDto: CreatePgusDto, @Request() req) {
     return this.pgusService.create(createPgusDto, req.headers.authorization);
+  }
+
+  @UseGuards(TokenAuthGuard)
+  @Post('constraint/:id')
+  submitConstraint(
+    @Param('id') id: string,
+    @Body() constraint: Constraint,
+    @Request() req,
+  ) {
+    return this.pgusService.submitConstraint(
+      id,
+      constraint,
+      req.headers.authorization,
+    );
+  }
+
+  @UseGuards(TokenAuthGuard)
+  @Get('alert/:id')
+  async declareAlert(@Param('id') id: string, @Request() req) {
+    return await this.pgusService.declareAlert(id, req.headers.authorization);
+  }
+
+  @UseGuards(TokenAuthGuard)
+  @Get('urgency/:id')
+  async declareUrgency(@Param('id') id: string, @Request() req) {
+    return await this.pgusService.declareUrgency(id, req.headers.authorization);
   }
 
   @UseGuards(TokenAuthGuard)
