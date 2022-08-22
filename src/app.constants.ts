@@ -3,8 +3,10 @@ export class AppConstants {
   static readonly STATE_BUFFER_SIZE = 10;
 
   static readonly FABLO_API = 'http://localhost:8801';
-  static readonly smartContractInvokePoint = '/invoke/my-channel1/chaincode1';
-  static readonly smartContractQueryPoint = '/query/my-channel1/chaincode1';
+  static readonly smartContractInvokePoint =
+    '/invoke/producer-1/monitorPGUchaincode';
+  static readonly smartContractQueryPoint =
+    '/query/producer-1/monitorPGUchaincode';
 
   static readonly PGUMonitorContractMethod = {
     createPGU: 'MonitorPGUContract:CreatePGU',
